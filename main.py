@@ -1,21 +1,25 @@
 import os
 import logging
 from pymongo import MongoClient
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, CallbackQueryHandler, filters
-from telegram import ReplyKeyboardMarkup
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from telegram import ReplyKeyboardMarkup, Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler, MessageHandler, filters
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s', level=logging.INFO)
 
 # MongoDB connection
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb+srv://surajAura:AuraArjun@kovai.8gwiq.mongodb.net/TBot?retryWrites=true&w=majority')
+MONGO_URI = os.getenv('MONGO_URI', 'mongodb+srv://surajAura:AuraArjun@kovai.8gwiq.mongodb.net/TBot?retryWrites=true&w=majority')  # Replace with your MongoDB URI
 client = MongoClient(MONGO_URI)
 db = client['TBot']
 users_collection = db['Users']
 
 # List of required channel usernames
-REQUIRED_CHANNELS = ['@IncomeLootOfficial', '@Share2EarnAnnouncement', '@Share2EarnUpdates', '@AbhiTrendzDeals', '@DailyCampaignZone','@DailyEarningSathi']
+REQUIRED_CHANNELS = ['@IncomeLootOfficial', '@Share2EarnAnnouncement', '@Share2EarnUpdates', '@AbhiTrendzDeals', '@DailyCampaignZone', '@DailyEarningSathi']
+
+app = FastAPI()
+bot = Bot(token="7903693809:AAGLtWfXJZfn_4kfOqlQHdVDUWAts5nGcMA")  # Replace with your actual bot token
 
 def capitalize_words(text):
     """Capitalize each word in the given text."""
@@ -300,8 +304,16 @@ async def handle_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def is_start_command(update: Update) -> bool:
      """Check if the message is 'start' in any case."""
      return update.message.text.lower() == 'start'
+ 
+@app.post("/webhook")
+async def webhook(request: Request):
+    update = Update.de_json(await request.json(), bot)
+    application = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
+    await application.process_update(update)
+    return JSONResponse(status_code=200)
 
-def main():
+
+async def main():
    application = ApplicationBuilder().token("7903693809:AAGLtWfXJZfn_4kfOqlQHdVDUWAts5nGcMA").build()
 
    # Add handlers for commands and messages
@@ -316,7 +328,9 @@ def main():
    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.TEXT & ~filters.COMMAND , handle_commands))
 
    # Run the bot until you send a signal (e.g., Ctrl+C)
-   application.run_polling()
+   if os.getenv("RENDER"):
+        await application.bot.set_webhook(url="https://<YOUR_RENDER_URL>/webhook")
 
 if __name__ == '__main__':
-   main()
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
