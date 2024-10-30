@@ -308,7 +308,7 @@ def is_start_command(update: Update) -> bool:
 @app.post("/webhook")
 async def webhook(request: Request):
     update = Update.de_json(await request.json(), bot)
-    application = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
+    application = ApplicationBuilder().token("7903693809:AAGLtWfXJZfn_4kfOqlQHdVDUWAts5nGcMA").build()
     await application.process_update(update)
     return JSONResponse(status_code=200)
 
@@ -328,8 +328,8 @@ async def main():
    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.TEXT & ~filters.COMMAND , handle_commands))
 
    # Run the bot until you send a signal (e.g., Ctrl+C)
-   if os.getenv("RENDER"):
-        await application.bot.set_webhook(url="https://<YOUR_RENDER_URL>/webhook")
+   if os.getenv("VERCEL"):
+        await application.bot.set_webhook(url="https://t-bot-olive.vercel.app/webhook")
 
 if __name__ == '__main__':
     import uvicorn
